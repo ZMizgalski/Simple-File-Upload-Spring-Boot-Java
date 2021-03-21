@@ -15,6 +15,8 @@ public class File {
     @Id
     private String id;
 
+    private String name;
+
     private String type;
 
     private byte[] file;

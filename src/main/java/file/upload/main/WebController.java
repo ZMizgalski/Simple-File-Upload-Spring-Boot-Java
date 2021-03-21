@@ -15,7 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
@@ -85,7 +85,7 @@ public class WebController {
         List<FileModel> formattedFiles = new ArrayList<>();
         for (MultipartFile file: files) {
             String id = UUID.randomUUID().toString();
-            fileRepository.save(new File(id, file.getContentType(), compressBytes(file.getBytes())));
+            fileRepository.save(new File(id, file.getOriginalFilename(), file.getContentType(), compressBytes(file.getBytes())));
             formattedFiles.add(new FileModel(id));
         }
         Item item = new Item();
@@ -98,10 +98,13 @@ public class WebController {
     @GetMapping(path = { "/get/{id}" })
     public File getImage(@PathVariable("id") String id) {
         String formattedId = id == null ? "-": id;
-            return fileRepository.findById(formattedId).map(file -> new File(
+            return fileRepository.findById(formattedId).map(file -> {
+                return new File(
+                        file.getName(),
                    file.getId(),
                    file.getType(),
                    decompressBytes(file.getFile())
-           )).orElse(null);
+                );
+            }).orElse(null);
     }
 }
