@@ -79,14 +79,13 @@ public class WebController {
         ItemDTO itemDTO = mapDataToJSON(itemRequest);
         val name = itemDTO.getName() == null ? "" : itemDTO.getName();
         val description = itemDTO.getDescription() == null ? "No description" : itemDTO.getDescription();
-        val type = itemDTO.getType() == null ? "No description" : itemDTO.getType();
         if (itemRepository.existsByName(name) && !name.isBlank() && !name.isEmpty()) {
             return ResponseEntity.badRequest().body(String.format("Name: %s already exists or is blank!", name));
         }
         List<FileModel> formattedFiles = new ArrayList<>();
         for (MultipartFile file: files) {
             String id = UUID.randomUUID().toString();
-            fileRepository.save(new File(id, type, compressBytes(file.getBytes())));
+            fileRepository.save(new File(id, file.getContentType(), compressBytes(file.getBytes())));
             formattedFiles.add(new FileModel(id));
         }
         Item item = new Item();
