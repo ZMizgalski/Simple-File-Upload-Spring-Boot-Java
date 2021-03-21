@@ -1,16 +1,16 @@
 package file.upload.main;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import file.upload.main.models.*;
 import file.upload.main.models.File;
-import file.upload.main.models.FileModel;
-import file.upload.main.models.Item;
-import file.upload.main.models.ItemDTO;
 import file.upload.main.repos.FileRepository;
 import file.upload.main.repos.ItemRepository;
 import lombok.SneakyThrows;
 import lombok.val;
 import org.apache.tomcat.util.http.fileupload.ByteArrayOutputStream;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -51,7 +51,7 @@ public class WebController {
         try {
             outputStream.close();
         } catch (IOException e) {
-            //
+            e.printStackTrace();
         }
         return outputStream.toByteArray();
     }
@@ -68,7 +68,7 @@ public class WebController {
             }
             outputStream.close();
         } catch (IOException | DataFormatException ioe) {
-            //
+            ioe.printStackTrace();
         }
         return outputStream.toByteArray();
     }
@@ -95,16 +95,15 @@ public class WebController {
         itemRepository.save(item);
         return ResponseEntity.ok().body("Products uploaded!");
     }
+
     @GetMapping(path = { "/get/{id}" })
-    public File getImage(@PathVariable("id") String id) {
+    public ResponseEntity<?> getImage(@PathVariable("id") String id) {
         String formattedId = id == null ? "-": id;
-            return fileRepository.findById(formattedId).map(file -> {
-                return new File(
-                        file.getName(),
-                   file.getId(),
-                   file.getType(),
-                   decompressBytes(file.getFile())
-                );
-            }).orElse(null);
+        File file = fileRepository.findById(formattedId).map(f -> new File(f.getId(),f.getName(),f.getType(),decompressBytes(f.getFile()))).orElse(null);
+        assert file != null;
+        return ResponseEntity.ok()
+                .contentType(MediaType.valueOf(file.getType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "filename=\"" + file.getName() + "\"")
+                .body(file.getFile());
     }
 }
