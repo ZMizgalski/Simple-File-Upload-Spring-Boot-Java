@@ -96,7 +96,7 @@ public class WebController {
         return ResponseEntity.ok().body("Products uploaded!");
     }
 
-    @GetMapping(path = { "/get/{id}" })
+    @GetMapping(path = { "/getFile/{id}" })
     public ResponseEntity<?> getImage(@PathVariable("id") String id) {
         String formattedId = id == null ? "-": id;
         File file = fileRepository.findById(formattedId).map(f -> new File(f.getId(),f.getName(),f.getType(),decompressBytes(f.getFile()))).orElse(null);
@@ -105,5 +105,19 @@ public class WebController {
                 .contentType(MediaType.valueOf(file.getType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "filename=\"" + file.getName() + "\"")
                 .body(file.getFile());
+    }
+
+    @GetMapping(path = {"/getAllItems"})
+    public ResponseEntity<?> getItem() {
+        return ResponseEntity.ok().body(itemRepository.findAll());
+    }
+
+    @GetMapping(path = {"/getItem/{name}"})
+    public ResponseEntity<?> getItem(@PathVariable("name") String name) {
+        if (!itemRepository.existsByName(name)) {
+            return ResponseEntity.badRequest().body("Name to exists!");
+        }
+        Optional<Item> item = itemRepository.findItemByName(name);
+        return ResponseEntity.ok().body(item);
     }
 }
