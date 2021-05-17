@@ -14,7 +14,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.*;
 import java.util.*;
 import java.util.zip.DataFormatException;
@@ -84,9 +83,12 @@ public class WebController {
         }
         List<FileModel> formattedFiles = new ArrayList<>();
         for (MultipartFile file: files) {
-            String id = UUID.randomUUID().toString();
-            fileRepository.save(new File(id, file.getOriginalFilename(), file.getContentType(), compressBytes(file.getBytes())));
-            formattedFiles.add(new FileModel(id));
+            assert file.getContentType() != null;
+            if(file.getContentType().startsWith("image/")) {
+                String id = UUID.randomUUID().toString();
+                fileRepository.save(new File(id, file.getOriginalFilename(), file.getContentType(), compressBytes(file.getBytes())));
+                formattedFiles.add(new FileModel(id));
+            }
         }
         Item item = new Item();
         item.setName(name);
@@ -96,15 +98,35 @@ public class WebController {
         return ResponseEntity.ok().body("Products uploaded!");
     }
 
+    @CrossOrigin
+    @SneakyThrows
     @GetMapping(path = { "/getFile/{id}" })
     public ResponseEntity<?> getImage(@PathVariable("id") String id) {
         String formattedId = id == null ? "-": id;
+        if (!fileRepository.existsById(formattedId)) {
+            return ResponseEntity.badRequest().body("");
+        }
         File file = fileRepository.findById(formattedId).map(f -> new File(f.getId(),f.getName(),f.getType(),decompressBytes(f.getFile()))).orElse(null);
         assert file != null;
         return ResponseEntity.ok()
                 .contentType(MediaType.valueOf(file.getType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "filename=\"" + file.getName() + "\"")
                 .body(file.getFile());
+    }
+    @DeleteMapping(path = {"/deleteItem/{name}"})
+    public ResponseEntity<?> deleteItem(@PathVariable("name") String name) {
+
+        if (!itemRepository.existsByName(name)) {
+            return ResponseEntity.badRequest().body(String.format("Name: %s not exists!", name));
+        }
+        Optional<Item> file = itemRepository.findItemByName(name);
+        file.ifPresent(item -> {
+            List<FileModel> files = item.getFiles();
+            files.forEach(everyFile -> fileRepository.deleteById(everyFile.getId()));
+            itemRepository.deleteById(item.getId());
+        });
+
+        return ResponseEntity.ok().body("Product deleted!");
     }
 
     @GetMapping(path = {"/getAllItems"})
