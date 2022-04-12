@@ -1,4 +1,4 @@
-# Shop-Backend-Spring-Boot-Java
+# Simple-File-Upload-Spring-Boot-Java
 > Basic file upload backend made with Java 15 and Spring Boot.
 
 ## Table of Contents
