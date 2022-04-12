@@ -13,7 +13,7 @@
 * [License](#license)
 
 ## General Information
-- This project was made to create a basic version of file upload which can be applied in any projects. It has a file compression.
+- This project was made to create a basic version of file upload with file compression which can be applied in any project
 
 ## Technologies Used
 - MongoDB database
